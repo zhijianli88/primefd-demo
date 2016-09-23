@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "yamivideocomp.h"
+#include "vppinputoutput.h"
 
 using namespace YamiMediaCodec;
 
@@ -16,6 +17,20 @@ static int numRefFrames = 1;
 static int idrInterval = 0;
 static int dmabuf;
 static int poolsize = 5;
+
+
+SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, const SharedPtr<VADisplay>& display)
+{
+	uint32_t fourcc;
+	int width, height;
+	SharedPtr<FrameAllocator> allocator(new PooledFrameAllocator(display, 5));
+	if (!output->getFormat(fourcc, width, height)
+				|| !allocator->setFormat(fourcc, width,height)) {
+		allocator.reset();
+		ERROR("get Format failed");
+	}
+	return allocator;
+}
 
 int main(int argc,char** argv){
 	IVideoEncoder *encoder = NULL;
@@ -114,14 +129,38 @@ int main(int argc,char** argv){
 	//get the surface
 	SurfaceCreate* surface = new SurfaceCreate;
 	surface->PooledFrameAlloc(vaDisplay,videoWidth,videoHeight,dmabuf,poolsize);  
+    
+	//create vpp
+	SharedPtr<IVideoPostProcess> vpp;
+	vpp.reset(createVideoPostProcess(YAMI_VPP_SCALER), releaseVideoPostProcess);
+	if (vpp->setNativeDisplay(nativeDisplay) != YAMI_SUCCESS)
+	    return false;
+
+	//init vpp
+	SharedPtr<VADisplay> display;
+	display.reset(new VADisplay(vaDisplay));
+    
+	char vppoutput[] = "trans.yuv";
+	SharedPtr<VppOutput> output1 = VppOutput::create(vppoutput,VA_FOURCC_NV12,videoWidth,videoHeight);
+	if(!output1){
+		printf("create output1 failed!\n");
+		return -1;
+	}
+	SharedPtr<FrameAllocator> allocator = createAllocator(output1,display);
 
 	//encode frame
     for(int i=0;i<poolsize;i++){
 		SharedPtr<VideoFrame> frame = surface->alloc();
-		//vpp?
+		//vpp process
+		SharedPtr<VideoFrame> dest = allocator->alloc();
+		status = vpp->process(frame,dest);
+		if(status != YAMI_SUCCESS){
+			printf("failed to scale! %d",status);
+			break;
+		}
 
-		if(frame){
-			status = encoder->encode(frame);
+		if(dest){
+			status = encoder->encode(dest);
 			assert(status == ENCODE_SUCCESS);
 		}
 		else{
