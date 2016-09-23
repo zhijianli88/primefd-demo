@@ -22,10 +22,10 @@ using namespace YamiMediaCodec;
 
 
 template <class T>
-class VideoPool
+class Video_Pool
 {
 public:
-	VideoPool(std::deque<SharedPtr<T> >& buffers)
+	Video_Pool(std::deque<SharedPtr<T> >& buffers)
 	{
 		m_holder.swap(buffers);
 		for (size_t i = 0; i < m_holder.size(); i++) {
@@ -59,7 +59,7 @@ public:
     {
         m_surfaces.swap(surfaces);
     }
-    void operator()(VideoPool<VideoFrame>* pool)
+    void operator()(Video_Pool<VideoFrame>* pool)
     {
         if (m_surfaces.size())
             vaDestroySurfaces(*m_display, &m_surfaces[0], m_surfaces.size());
@@ -78,7 +78,7 @@ private:
 	uint32_t m_width;
 	uint32_t m_height;
 	uint32_t m_handle;
-	SharedPtr<VideoPool<VideoFrame> > m_pool;
+	SharedPtr<Video_Pool<VideoFrame> > m_pool;
 	int m_poolsize;
 }; 
 

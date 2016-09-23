@@ -58,7 +58,7 @@ bool SurfaceCreate::PooledFrameAlloc(VADisplay display,uint32_t width,uint32_t h
 		f->fourcc = YAMI_FOURCC_RGBX;
 		buffers.push_back(f);
 	}
-	m_pool.reset(new VideoPool<VideoFrame>(buffers),SurfaceDestoryer(m_display,surfaces));
+	m_pool.reset(new Video_Pool<VideoFrame>(buffers),SurfaceDestoryer(m_display,surfaces));
 	return true;
 }
 
