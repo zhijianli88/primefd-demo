@@ -2,6 +2,9 @@
 #include <string.h>
 #include "yamivideocomp.h"
 #include "vppinputoutput.h"
+#include "dmabuf-alone.h"
+
+//#include "dmabuf-alone.c"
 
 using namespace YamiMediaCodec;
 
@@ -39,16 +42,16 @@ int main(int argc,char** argv){
 	VideoEncOutputBuffer outputBuffer;
 	uint32_t maxOutSize = 0;
 
-	if(argc<4){
-		printf("error: the number of input parameters must be 3:\nvideowidth\nwideoheight\ndmabuf_handler\n");
-		printf("usage: yamiencode <videowidth> <videoheight> <dmabuf_handler>\n");
+	if(argc<3){
+		printf("error: the number of input parameters must be 3:\nvideowidth\nwideoheight\n");
+		printf("usage: yamiencode <videowidth> <videoheight>\n");
 		return -1;
 	}
 
 	//set parameters
 	videoWidth = atoi(argv[1]);  //width
 	videoHeight = atoi(argv[2]); //height
-	dmabuf = atoi(argv[3]);  //dmabuf handler
+	//dmabuf = atoi(argv[3]);  //dmabuf handler
 	char codec[] = "AVC";
 	char outputfile[] = "test.h264";
     
@@ -69,6 +72,10 @@ int main(int argc,char** argv){
 		fprintf(stderr,"Failed to open card0 \n");
 		return -1;
 	}
+
+	dmabuf = test_dmabuf(fd);
+	fprintf(stderr, "dmabuf fd is %d\n", dmabuf);
+
 	VADisplay vaDisplay = vaGetDisplayDRM(fd);
 	int major, minor;
 	VAStatus va_status;
