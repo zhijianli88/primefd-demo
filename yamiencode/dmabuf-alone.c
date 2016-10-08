@@ -71,7 +71,8 @@ static uint32_t create_userptr_bo(int fd, uint64_t size)
 		   MAP_ANONYMOUS | MAP_SHARED,
 		   -1, 0);
 
-	gem_userptr(fd, (uint32_t *)ptr, size, 0, userptr_flags, &handle);
+	if (gem_userptr(fd, (uint32_t *)ptr, size, 0, userptr_flags, &handle))
+	    fprintf(stderr, "gem_userptr failed\n");
 
 	return handle;
 }
@@ -86,8 +87,10 @@ static int export_handle(int fd, uint32_t handle, int *outfd)
 	args.fd = -1;
 
 	ret = drmIoctl(fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &args);
-	if (ret)
+	if (ret) {
 		ret = errno;
+		fprintf(stderr, "DRM_IOCTL_PRIME_HANDLE_TO_FD failed\n");
+        }
 	*outfd = args.fd;
 
 	return ret;
@@ -107,6 +110,9 @@ int test_dmabuf(int fd1)
 	memset(ptr, 0, sizeof(linear));
 
 	ret = export_handle(fd1, handle, &dma_buf_fd);
+	if (ret) {
+           fprintf(stderr, "export_handle failed\n");
+	}
 #if 0
 	if (userptr_flags & LOCAL_I915_USERPTR_UNSYNCHRONIZED && ret) {
 		igt_assert(ret == EINVAL || ret == ENODEV);

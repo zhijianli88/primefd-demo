@@ -35,6 +35,15 @@ SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, co
 	return allocator;
 }
 
+static void dump_encVideoParams(VideoParamsCommon *p)
+{
+    printf("resolution(%d * %d)\n", p->resolution.width, p->resolution.height);
+    printf("frameRate(%d, %d)\n", p->frameRate.frameRateDenom, p->frameRate.frameRateNum);
+    printf("intraPeriod %d, ipPeriod %d, rcMode %d, numRefFrames %d\n",
+	    p->intraPeriod, p->ipPeriod, p->rcMode, p->numRefFrames);
+    printf("rcParams(%d, %d)\n", p->rcParams.bitRate, p->rcParams.initQP);
+}
+
 int main(int argc,char** argv){
 	IVideoEncoder *encoder = NULL;
 	EncodeOutput* output;
@@ -107,6 +116,8 @@ int main(int argc,char** argv){
 
 	encVideoParams.size = sizeof(VideoParamsCommon);
 	encoder->setParameters(VideoParamsTypeCommon,&encVideoParams);
+
+	dump_encVideoParams(&encVideoParams);
 
 	//configure AVC encoding parameters
 	VideoParamsAVC encVideoParamsAVC;
