@@ -95,7 +95,7 @@ int main(int argc,char** argv){
 	}
 	NativeDisplay nativeDisplay;
 	nativeDisplay.type = NATIVE_DISPLAY_DRM;
-	nativeDisplay.handle = (intptr_t)vaDisplay;
+	nativeDisplay.handle = -1;
 	encoder->setNativeDisplay(&nativeDisplay);
 
 	//configure encoding parameters

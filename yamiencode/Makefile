@@ -10,7 +10,7 @@ INC_PATH += -I/opt/yami/vaapi/include/va -I/opt/yami/libyami/include/libyami -I/
 LD_PATH = -L /usr/local/lib
 LD_PATH += -L/opt/yami/libyami/lib/ -L/opt/yami/vaapi/lib/
 
-LDFLAG = -lyami -lva -lva-drm -ldrm
+LDFLAG = -lyami -lva -lva-drm -ldrm -g
 
 CXX = g++
 
