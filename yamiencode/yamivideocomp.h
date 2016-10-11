@@ -70,8 +70,8 @@ public:
 
 class SurfaceCreate{
 public:
-	void bindToSurface(std::vector<VASurfaceID>& surfaces);
-	bool PooledFrameAlloc(VADisplay display,uint32_t width,uint32_t height,uint32_t handle,int poolsize);  //maybe global variables
+	int bindToSurface(std::vector<VASurfaceID>& surfaces);
+	bool PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,uint32_t handle,int poolsize);  //maybe global variables
 	SharedPtr<VideoFrame> alloc();
 private:
 	SharedPtr<VADisplay> m_display;

@@ -146,7 +146,10 @@ int main(int argc,char** argv){
 	
 	//get the surface
 	SurfaceCreate* surface = new SurfaceCreate;
-	surface->PooledFrameAlloc(vaDisplay,videoWidth,videoHeight,dmabuf,poolsize);  
+	if (!surface->PooledFrameAlloc(&vaDisplay,videoWidth,videoHeight,dmabuf,poolsize)) {
+	    fprintf(stderr, "surface->PooledFrameAlloc failed\n");
+	    return false;
+	}
     
 	//create vpp
 	SharedPtr<IVideoPostProcess> vpp;

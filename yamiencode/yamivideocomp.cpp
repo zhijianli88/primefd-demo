@@ -4,7 +4,7 @@
 using namespace YamiMediaCodec;
 #define BPP 32
 
-void SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
+int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	VASurfaceAttribExternalBuffers external;	
 	memset(&external, 0, sizeof(external));
 
@@ -33,24 +33,28 @@ void SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 
 	if (vaStatus != VA_STATUS_SUCCESS){
 		fprintf(stderr,"VA SURFACE CREATE FAILED!\n");
-		return;
+		return -1;
 	}
 
-	return;
+	return 0;
 }
 
-bool SurfaceCreate::PooledFrameAlloc(VADisplay display,uint32_t width,uint32_t height,uint32_t handle,int poolsize){
+bool SurfaceCreate::PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,uint32_t handle,int poolsize){
 	std::vector<VASurfaceID> surfaces;
 	surfaces.resize(m_poolsize);
 	
 	//FIXME
-	m_display.reset(&display);
+	m_display.reset(display);
 	m_width = width;
 	m_height = height;
 	m_handle = handle;
 	m_poolsize = poolsize;
 	
-	bindToSurface(surfaces);
+	if (bindToSurface(surfaces)) {
+	    fprintf(stderr, "bindToSurface failed\n");
+	    return false;
+	}
+
 	std::deque<SharedPtr<VideoFrame> > buffers;
 	for(size_t i=0;i<surfaces.size();i++){
 		SharedPtr<VideoFrame> f(new VideoFrame);
