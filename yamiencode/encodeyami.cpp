@@ -19,7 +19,7 @@ static VideoRateControl rcMode = RATE_CONTROL_CQP;
 static int numRefFrames = 1;
 static int idrInterval = 0;
 static int dmabuf;
-static int poolsize = 5;
+static int poolsize = 1;
 
 
 SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, const SharedPtr<VADisplay>& display)

@@ -22,6 +22,7 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	attribs[0].type = VASurfaceAttribMemoryType;
 	attribs[0].value.type = VAGenericValueTypeInteger;
 	attribs[0].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
+	attribs[0].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
 
 	attribs[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
 	attribs[1].type = VASurfaceAttribExternalBufferDescriptor;
@@ -29,7 +30,7 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	attribs[1].value.value.p = &external;
 
 	VASurfaceID id;
-	VAStatus vaStatus = vaCreateSurfaces(*m_display, VA_RT_FORMAT_RGB32, m_width, m_height, &surfaces[0], surfaces.size(),attribs, sizeof(attribs)/sizeof(attribs[0]));
+	VAStatus vaStatus = vaCreateSurfaces(*(m_display.get()), VA_RT_FORMAT_RGB32, m_width, m_height, &surfaces[0], surfaces.size(),attribs, sizeof(attribs)/sizeof(attribs[0]));
 
 	if (vaStatus != VA_STATUS_SUCCESS){
 		fprintf(stderr,"VA SURFACE CREATE FAILED!\n");
@@ -41,7 +42,7 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 
 bool SurfaceCreate::PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,uint32_t handle,int poolsize){
 	std::vector<VASurfaceID> surfaces;
-	surfaces.resize(m_poolsize);
+	surfaces.resize(poolsize);
 	
 	//FIXME
 	m_display.reset(display);
