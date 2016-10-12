@@ -71,13 +71,13 @@ public:
 class SurfaceCreate{
 public:
 	int bindToSurface(std::vector<VASurfaceID>& surfaces);
-	bool PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,uint32_t handle,int poolsize);  //maybe global variables
+	bool PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,long unsigned int *handle,int poolsize);  //maybe global variables
 	SharedPtr<VideoFrame> alloc();
 private:
 	SharedPtr<VADisplay> m_display;
 	uint32_t m_width;
 	uint32_t m_height;
-	uint32_t m_handle;
+	long unsigned int *m_handle;
 	SharedPtr<Video_Pool<VideoFrame> > m_pool;
 	int m_poolsize;
 }; 

@@ -18,8 +18,8 @@ static int initQp = 26;
 static VideoRateControl rcMode = RATE_CONTROL_CQP;
 static int numRefFrames = 1;
 static int idrInterval = 0;
-static int dmabuf;
-static int poolsize = 1;
+static long unsigned int dmabuf[1024];
+static int poolsize = 5;
 
 
 SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, const SharedPtr<VADisplay>& display)
@@ -82,8 +82,10 @@ int main(int argc,char** argv){
 		return -1;
 	}
 
-	dmabuf = test_dmabuf(fd);
-	fprintf(stderr, "dmabuf fd is %d\n", dmabuf);
+	for (int i = 0; i < poolsize; i++) {
+		dmabuf[i] = test_dmabuf(fd);
+		fprintf(stderr, "dmabuf[%d] fd is %d\n", i, dmabuf[i]);
+	}
 
 	VADisplay vaDisplay = vaGetDisplayDRM(fd);
 	int major, minor;
@@ -193,11 +195,12 @@ int main(int argc,char** argv){
 			status = encoder->getOutput(&outputBuffer,false);
 			if(status == ENCODE_SUCCESS
 			  && output->write(outputBuffer.data,outputBuffer.dataSize)){
-				printf("output data size:%d",outputBuffer.dataSize);
+				printf("output data size:%d\n",outputBuffer.dataSize);
 			}
 		}while(status != ENCODE_BUFFER_NO_MORE);
 	}
-	
+
+#if 0
 	// drain the output buffer
 	do{
 		status = encoder->getOutput(&outputBuffer,true);
@@ -205,7 +208,7 @@ int main(int argc,char** argv){
 			output->write(outputBuffer.data,outputBuffer.dataSize);
 		}
 	}while(status != ENCODE_BUFFER_NO_MORE);
-
+#endif
 	encoder->stop();
 	releaseVideoEncoder(encoder);
 	free(outputBuffer.data);

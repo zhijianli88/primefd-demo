@@ -14,8 +14,11 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	external.data_size = m_width * m_height * BPP / 8;
 	external.num_planes = 1;
 	external.pitches[0] = m_width; //can be obtained from vcreate FIXME
-	external.buffers = (long unsigned int*)&m_handle;
-	external.num_buffers = 1;
+	external.buffers = (long unsigned int*)m_handle;
+	external.num_buffers = m_poolsize;
+	for (int i = 0; i < m_poolsize; i++) {
+		fprintf(stderr, " external.buffers %p, %d\n", m_handle, m_handle[i]);
+	}
 
 	VASurfaceAttrib attribs[2];
 	attribs[0].flags = VA_SURFACE_ATTRIB_SETTABLE;
@@ -40,7 +43,7 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	return 0;
 }
 
-bool SurfaceCreate::PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,uint32_t handle,int poolsize){
+bool SurfaceCreate::PooledFrameAlloc(VADisplay *display,uint32_t width,uint32_t height,long unsigned int *handle,int poolsize){
 	std::vector<VASurfaceID> surfaces;
 	surfaces.resize(poolsize);
 	
