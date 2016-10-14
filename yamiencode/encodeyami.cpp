@@ -87,14 +87,6 @@ int main(int argc,char** argv){
 		fprintf(stderr, "dmabuf[%d] fd is %d\n", i, dmabuf[i]);
 	}
 
-	VADisplay vaDisplay = vaGetDisplayDRM(fd);
-	int major, minor;
-	VAStatus va_status;
-	va_status = vaInitialize(vaDisplay,&major,&minor);
-	if(va_status != VA_STATUS_SUCCESS){
-		fprintf(stderr,"init va failed status = %d",status);
-		return -1;
-	}
 	NativeDisplay nativeDisplay;
 	nativeDisplay.type = NATIVE_DISPLAY_DRM;
 	nativeDisplay.handle = -1;
@@ -145,7 +137,16 @@ int main(int argc,char** argv){
 		delete output;
 		return -1;
 	}
-	
+
+	VADisplay vaDisplay = vaGetDisplayDRM(fd);
+	int major, minor;
+	VAStatus va_status;
+	va_status = vaInitialize(vaDisplay,&major,&minor);
+	if(va_status != VA_STATUS_SUCCESS){
+		fprintf(stderr,"init va failed status = %d",status);
+		return -1;
+	}
+
 	//get the surface
 	SurfaceCreate* surface = new SurfaceCreate;
 	if (!surface->PooledFrameAlloc(&vaDisplay,videoWidth,videoHeight,dmabuf,poolsize)) {
