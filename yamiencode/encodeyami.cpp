@@ -198,6 +198,8 @@ int main(int argc,char** argv){
 			if(status == ENCODE_SUCCESS
 			  && output->write(outputBuffer.data,outputBuffer.dataSize)){
 				printf("output data size:%d\n",outputBuffer.dataSize);
+				for (int j = 0; j < 240; j++)
+					output->write(outputBuffer.data,outputBuffer.dataSize);
 			}
 		}while(status != ENCODE_BUFFER_NO_MORE);
 	}
