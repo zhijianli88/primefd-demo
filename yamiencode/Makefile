@@ -16,7 +16,7 @@ CXX = g++
 
 CC = gcc
 
-yamiencode:
+yamiencode: $(SRC)
 #	gcc -o dmabuf-alone.o -c dmabuf-alone.c -I /usr/include/drm/ #-ldrm_intel -ldrm
 	$(CXX) $(SRC) $(INC_PATH) $(LD_PATH) $(LDFLAG) -o $@
 
