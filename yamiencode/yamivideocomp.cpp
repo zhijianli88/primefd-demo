@@ -17,7 +17,7 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	external.buffers = (long unsigned int*)m_handle;
 	external.num_buffers = m_poolsize;
 	for (int i = 0; i < m_poolsize; i++) {
-		fprintf(stderr, " external.buffers %p, %d\n", m_handle, m_handle[i]);
+		fprintf(stderr, " external.buffers %p, %ld\n", m_handle, m_handle[i]);
 	}
 
 	VASurfaceAttrib attribs[2];

@@ -85,7 +85,7 @@ int main(int argc,char** argv){
 	dmabuf[0] = test_dmabuf(fd, vmid);
 	for (int i = 1; i < poolsize; i++) {
 		dmabuf[i] = dmabuf[0];
-		fprintf(stderr, "dmabuf[%d] fd is %d\n", i, dmabuf[i]);
+		fprintf(stderr, "dmabuf[%d] fd is %ld\n", i, dmabuf[i]);
 	}
 
 	NativeDisplay nativeDisplay;
