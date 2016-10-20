@@ -102,10 +102,6 @@ int test_dmabuf(int fd1)
 	int dma_buf_fd = -1;
 	int ret;
 
-//	fd1 = open("/dev/dri/card0", O_RDWR);
-
-	//fd1 = drm_open_driver(DRIVER_INTEL);
-
 	handle = create_userptr_bo(fd1, sizeof(linear));
 	memset(ptr, 0, sizeof(linear));
 
@@ -113,51 +109,7 @@ int test_dmabuf(int fd1)
 	if (ret) {
            fprintf(stderr, "export_handle failed\n");
 	}
-#if 0
-	if (userptr_flags & LOCAL_I915_USERPTR_UNSYNCHRONIZED && ret) {
-		igt_assert(ret == EINVAL || ret == ENODEV);
-		free_userptr_bo(fd1, handle);
-		close(fd1);
-		return 0;
-	} else {
-		igt_assert_eq(ret, 0);
-		igt_assert_lte(0, dma_buf_fd);
-	}
 
-	fd2 = drm_open_driver(DRIVER_INTEL);
-	handle_import = prime_fd_to_handle(fd2, dma_buf_fd);
-	check_bo(fd1, handle, 1, fd2, handle_import);
-
-	/* close dma_buf, check whether nothing disappears. */
-	close(dma_buf_fd);
-	check_bo(fd1, handle, 1, fd2, handle_import);
-
-	/* destroy userptr object and expect SIGBUS */
-	free_userptr_bo(fd1, handle);
-	close(fd1);
-
-	if (gem_has_llc(fd2)) {
-		struct sigaction sigact, orig_sigact;
-
-		memset(&sigact, 0, sizeof(sigact));
-		sigact.sa_sigaction = sigbus;
-		sigact.sa_flags = SA_SIGINFO;
-		ret = sigaction(SIGBUS, &sigact, &orig_sigact);
-		igt_assert_eq(ret, 0);
-
-		orig_sigbus = orig_sigact.sa_sigaction;
-
-		sigbus_cnt = 0;
-		check_bo(fd2, handle_import, -1, fd2, handle_import);
-		igt_assert(sigbus_cnt > 0);
-
-		ret = sigaction(SIGBUS, &orig_sigact, NULL);
-		igt_assert_eq(ret, 0);
-	}
-
-	close(fd2);
-	reset_handle_ptr();
-#endif
 	return dma_buf_fd;
 }
 #if 0
