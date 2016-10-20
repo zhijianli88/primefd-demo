@@ -153,35 +153,9 @@ static void write_ppm(uint8_t *data,  int w, int h, int bpp)
 	return;
 }
 
-#endif
-static int export_handle(int fd, uint32_t handle, int *outfd)
+int create_vgtbuffer_handle(int fd1, int vmid)
 {
-	struct drm_prime_handle args;
 	int ret;
-
-	args.handle = handle;
-	args.flags = DRM_CLOEXEC;
-	args.fd = -1;
-
-	ret = drmIoctl(fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &args);
-	if (ret) {
-		ret = errno;
-		fprintf(stderr, "DRM_IOCTL_PRIME_HANDLE_TO_FD failed\n");
-	}
-	*outfd = args.fd;
-
-	return ret;
-}
-
-int test_dmabuf(int fd1, int vmid)
-{
-	uint32_t handle;
-	int dma_buf_fd = -1;
-	int ret;
-#if PLAN_A
-	handle = create_userptr_bo(fd1, sizeof(linear));
-	memset(ptr, 0, sizeof(linear));
-#else
 	struct drm_i915_gem_vgtbuffer vcreate;
 
 	memset(&vcreate, 0, sizeof(struct drm_i915_gem_vgtbuffer));
@@ -227,7 +201,39 @@ int test_dmabuf(int fd1, int vmid)
 
 	write_ppm(addr, vcreate.width, vcreate.height, vcreate.bpp);
 
-	handle = vcreate.handle;
+	return vcreate.handle;
+}
+
+#endif
+static int export_handle(int fd, uint32_t handle, int *outfd)
+{
+	struct drm_prime_handle args;
+	int ret;
+
+	args.handle = handle;
+	args.flags = DRM_CLOEXEC;
+	args.fd = -1;
+
+	ret = drmIoctl(fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &args);
+	if (ret) {
+		ret = errno;
+		fprintf(stderr, "DRM_IOCTL_PRIME_HANDLE_TO_FD failed\n");
+	}
+	*outfd = args.fd;
+
+	return ret;
+}
+
+int test_dmabuf(int fd1, int vmid)
+{
+	uint32_t handle;
+	int dma_buf_fd = -1;
+	int ret;
+#if PLAN_A
+	handle = create_userptr_bo(fd1, sizeof(linear));
+	memset(ptr, 0, sizeof(linear));
+#else
+	handle = create_vgtbuffer_handle(fd1, vmid);
 
 #endif
 
