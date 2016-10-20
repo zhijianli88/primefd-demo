@@ -173,7 +173,7 @@ static int export_handle(int fd, uint32_t handle, int *outfd)
 	return ret;
 }
 
-int test_dmabuf(int fd1)
+int test_dmabuf(int fd1, int vmid)
 {
 	uint32_t handle;
 	int dma_buf_fd = -1;
@@ -190,16 +190,20 @@ int test_dmabuf(int fd1)
 		perror("check good");
 	} else {
 		perror("check failed\n");
+		exit(1);
 	}
 
 	drmSetMaster(fd1);
 
 	memset(&vcreate,0,sizeof(struct drm_i915_gem_vgtbuffer));
-	vcreate.vmid = 0;//xen_domid; //Gust xl number
+	vcreate.vmid = vmid;//xen_domid; //Gust xl number
 	vcreate.plane_id = I915_VGT_PLANE_PRIMARY;
 	vcreate.phys_pipe_id = UINT_MAX;//UINT_MAX;
-	drmIoctl(fd1, DRM_IOCTL_I915_GEM_VGTBUFFER, &vcreate);
-	perror("ss");
+	ret = drmIoctl(fd1, DRM_IOCTL_I915_GEM_VGTBUFFER, &vcreate);
+	if (ret) {
+	    perror("ioctl DRM_IOCTL_I915_GEM_VGTBUFFER error\n");
+	    exit(1);
+	}
 	printf("vmid=%d\n", vcreate.vmid);
 	printf("handle=%d\n", vcreate.handle);
 	printf("vcreate.width=%d, height=%d\n",vcreate.width,  vcreate.height);
@@ -230,6 +234,7 @@ int test_dmabuf(int fd1)
 	ret = export_handle(fd1, handle, &dma_buf_fd);
 	if (ret) {
            fprintf(stderr, "export_handle failed\n");
+	   exit(1);
 	}
 
 	return dma_buf_fd;

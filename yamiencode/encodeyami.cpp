@@ -51,16 +51,16 @@ int main(int argc,char** argv){
 	VideoEncOutputBuffer outputBuffer;
 	uint32_t maxOutSize = 0;
 
-	if(argc<3){
-		printf("error: the number of input parameters must be 3:\nvideowidth\nwideoheight\n");
-		printf("usage: yamiencode <videowidth> <videoheight>\n");
+	if(argc<4){
+		printf("error: the number of input parameters must be 3:\nvideowidth\nwideoheight\nvmid\n");
+		printf("usage: yamiencode <videowidth> <videoheight> <vmid>\n");
 		return -1;
 	}
 
 	//set parameters
 	videoWidth = atoi(argv[1]);  //width
 	videoHeight = atoi(argv[2]); //height
-	//dmabuf = atoi(argv[3]);  //dmabuf handler
+	int vmid = atoi(argv[3]);  //vmid handler
 	char codec[] = "AVC";
 	char outputfile[] = "test.h264";
     
@@ -82,8 +82,9 @@ int main(int argc,char** argv){
 		return -1;
 	}
 
-	for (int i = 0; i < poolsize; i++) {
-		dmabuf[i] = test_dmabuf(fd);
+	dmabuf[0] = test_dmabuf(fd, vmid);
+	for (int i = 1; i < poolsize; i++) {
+		dmabuf[i] = dmabuf[0];
 		fprintf(stderr, "dmabuf[%d] fd is %d\n", i, dmabuf[i]);
 	}
 
