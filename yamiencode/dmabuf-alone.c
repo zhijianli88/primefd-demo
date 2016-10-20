@@ -15,6 +15,9 @@
 #include "i915_drm.h"
 #include "dmabuf-alone.h"
 
+#define PLAN_A 0
+
+#if PLAN_A
 #ifndef PAGE_SIZE
 #define PAGE_SIZE 4096
 #endif
@@ -76,7 +79,81 @@ static uint32_t create_userptr_bo(int fd, uint64_t size)
 
 	return handle;
 }
+#else
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <sys/mman.h>
+#include <limits.h>
+#define __user
+#include <xf86drm.h>
+#include "i915_drm.h"
+
+struct drm_i915_gem_vgtbuffer {
+        __u32 vmid;
+        __u32 plane_id;
+#define I915_VGT_PLANE_PRIMARY 1
+#define I915_VGT_PLANE_SPRITE 2
+#define I915_VGT_PLANE_CURSOR 3
+        __u32 pipe_id;
+        __u32 phys_pipe_id;
+        __u8  enabled;
+        __u8  tiled;
+        __u32 bpp;
+        __u32 hw_format;
+        __u32 drm_format;
+        __u32 start;
+        __u32 x_pos;
+        __u32 y_pos;
+        __u32 x_offset;
+        __u32 y_offset;
+        __u32 size;
+        __u32 width;
+        __u32 height;
+        __u32 stride;
+        __u64 user_ptr;
+        __u32 user_size;
+        __u32 flags;
+#define I915_VGTBUFFER_READ_ONLY (1<<0)
+#define I915_VGTBUFFER_QUERY_ONLY (1<<1)
+#define I915_VGTBUFFER_CHECK_CAPABILITY (1<<2)
+#define I915_VGTBUFFER_UNSYNCHRONIZED 0x80000000
+        __u32 handle;
+};
+
+#define DRM_I915_GEM_VGTBUFFER          0x36
+#define DRM_IOCTL_I915_GEM_VGTBUFFER    DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GEM_VGTBUFFER, struct drm_i915_gem_vgtbuffer)
+
+static void write_ppm(uint8_t *data,  int w, int h, int bpp)
+{
+	FILE *fp;
+	int i;
+
+	fprintf(stderr, "w %d, h %d, bpp %d\n", w, h, bpp);
+
+	if ((fp = fopen("desktop.ppm", "wb")) == NULL) {
+		fprintf(stderr, "failed to open file\n");
+		exit(1);
+	}
+
+	fprintf(fp, "%s\n%d %d\n255\n", "P6", w, h);
+
+	for (i = 0; i < (w * h * bpp / 8); i++, data++) {
+		if (i % 4 == 3)
+			continue;
+		putc((int) *data, fp);
+	}
+
+	fclose(fp);
+	return;
+}
+
+#endif
 static int export_handle(int fd, uint32_t handle, int *outfd)
 {
 	struct drm_prime_handle args;
@@ -90,7 +167,7 @@ static int export_handle(int fd, uint32_t handle, int *outfd)
 	if (ret) {
 		ret = errno;
 		fprintf(stderr, "DRM_IOCTL_PRIME_HANDLE_TO_FD failed\n");
-        }
+	}
 	*outfd = args.fd;
 
 	return ret;
@@ -101,9 +178,54 @@ int test_dmabuf(int fd1)
 	uint32_t handle;
 	int dma_buf_fd = -1;
 	int ret;
-
+#if PLAN_A
 	handle = create_userptr_bo(fd1, sizeof(linear));
 	memset(ptr, 0, sizeof(linear));
+#else
+	struct drm_i915_gem_vgtbuffer vcreate;
+
+	memset(&vcreate, 0, sizeof(struct drm_i915_gem_vgtbuffer));
+	vcreate.flags = I915_VGTBUFFER_CHECK_CAPABILITY;
+	if (!drmIoctl(fd1, DRM_IOCTL_I915_GEM_VGTBUFFER, &vcreate)) {
+		perror("check good");
+	} else {
+		perror("check failed\n");
+	}
+
+	drmSetMaster(fd1);
+
+	memset(&vcreate,0,sizeof(struct drm_i915_gem_vgtbuffer));
+	vcreate.vmid = 0;//xen_domid; //Gust xl number
+	vcreate.plane_id = I915_VGT_PLANE_PRIMARY;
+	vcreate.phys_pipe_id = UINT_MAX;//UINT_MAX;
+	drmIoctl(fd1, DRM_IOCTL_I915_GEM_VGTBUFFER, &vcreate);
+	perror("ss");
+	printf("vmid=%d\n", vcreate.vmid);
+	printf("handle=%d\n", vcreate.handle);
+	printf("vcreate.width=%d, height=%d\n",vcreate.width,  vcreate.height);
+	printf("vcreate.stride=%d\n",vcreate.stride);
+	printf("bpp:%d\n", vcreate.bpp);
+	printf("tiled:%d\n", vcreate.tiled);
+	printf("start=%d\n", vcreate.start);
+	printf("size=%d\n", vcreate.size);
+	printf("fd=%d\n", fd1);
+
+	struct drm_i915_gem_mmap_gtt mmap_arg;
+	memset(&mmap_arg,0,sizeof(struct drm_i915_gem_mmap_gtt));
+	uint8_t *addr=NULL;
+	mmap_arg.handle = vcreate.handle;
+	drmIoctl(fd1, DRM_IOCTL_I915_GEM_MMAP_GTT, &mmap_arg);
+
+	addr = (uint8_t *)mmap(0, (vcreate.width*vcreate.height*vcreate.bpp)/8, PROT_READ | PROT_WRITE,
+			MAP_SHARED, fd1, mmap_arg.offset);
+	printf("handle=%d, offset=%llu, addr=%p\n",mmap_arg.handle, mmap_arg.offset, (unsigned int*)addr);
+
+
+	write_ppm(addr, vcreate.width, vcreate.height, vcreate.bpp);
+
+	handle = vcreate.handle;
+
+#endif
 
 	ret = export_handle(fd1, handle, &dma_buf_fd);
 	if (ret) {
