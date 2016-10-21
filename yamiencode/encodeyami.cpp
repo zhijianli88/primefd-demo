@@ -20,6 +20,7 @@ static int numRefFrames = 1;
 static int idrInterval = 0;
 static long unsigned int dmabuf[1024];
 static int poolsize = 1;
+static struct drm_i915_gem_vgtbuffer vgtbuffer;
 
 
 SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, const SharedPtr<VADisplay>& display)
@@ -51,29 +52,16 @@ int main(int argc,char** argv){
 	VideoEncOutputBuffer outputBuffer;
 	uint32_t maxOutSize = 0;
 
-	if(argc<4){
-		printf("error: the number of input parameters must be 3:\nvideowidth\nwideoheight\nvmid\n");
-		printf("usage: yamiencode <videowidth> <videoheight> <vmid>\n");
+	if(argc<2){
+		printf("error: the number of input parameters must be 1:\nvmid\n");
+		printf("usage: yamiencode <vmid>\n");
 		return -1;
 	}
 
 	//set parameters
-	videoWidth = atoi(argv[1]);  //width
-	videoHeight = atoi(argv[2]); //height
-	int vmid = atoi(argv[3]);  //vmid handler
+	int vmid = atoi(argv[1]);  //vmid handler
 	char codec[] = "AVC";
 	char outputfile[] = "test.h264";
-    
-	//create outputfile
-	output = EncodeOutput::create(outputfile,videoWidth,videoHeight,codec);
-	if(!output){
-		fprintf(stderr,"fail to init output stream!\n");
-		return -1;
-	}
-	
-	//create AVC encoder
-	encoder = createVideoEncoder(YAMI_MIME_H264);	
-	assert(encoder != NULL);
 
 	//set display parameters
 	int fd = open("/dev/dri/card0",O_RDWR);
@@ -82,11 +70,25 @@ int main(int argc,char** argv){
 		return -1;
 	}
 
-	dmabuf[0] = test_dmabuf(fd, vmid);
+	dmabuf[0] = test_dmabuf(fd, vmid, &vgtbuffer);
 	for (int i = 1; i < poolsize; i++) {
 		dmabuf[i] = dmabuf[0];
 		fprintf(stderr, "dmabuf[%d] fd is %ld\n", i, dmabuf[i]);
 	}
+
+	videoWidth = vgtbuffer.width;
+	videoHeight = vgtbuffer.height;
+
+	//create outputfile
+	output = EncodeOutput::create(outputfile,videoWidth,videoHeight,codec);
+	if(!output){
+		fprintf(stderr,"fail to init output stream!\n");
+		return -1;
+	}
+
+	//create AVC encoder
+	encoder = createVideoEncoder(YAMI_MIME_H264);
+	assert(encoder != NULL);
 
 	NativeDisplay nativeDisplay;
 	nativeDisplay.type = NATIVE_DISPLAY_DRM;
@@ -98,8 +100,8 @@ int main(int argc,char** argv){
 	encVideoParams.size = sizeof(VideoParamsCommon);
 	encoder->getParameters(VideoParamsTypeCommon,&encVideoParams);
 
-	encVideoParams.resolution.width = videoWidth;
-	encVideoParams.resolution.height = videoHeight;
+	encVideoParams.resolution.width = vgtbuffer.width;
+	encVideoParams.resolution.height = vgtbuffer.height;
 	encVideoParams.frameRate.frameRateDenom = 1;
 	encVideoParams.frameRate.frameRateNum = fps;
 	encVideoParams.intraPeriod = intraPeriod;
