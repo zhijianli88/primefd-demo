@@ -20,8 +20,34 @@ static int numRefFrames = 1;
 static int idrInterval = 0;
 static long unsigned int dmabuf[1024];
 static int poolsize = 1;
-static struct drm_i915_gem_vgtbuffer vgtbuffer;
+struct drm_i915_gem_vgtbuffer vgtbuffer;
+FILE *m_fp = stdout;
+ 
+    bool frame_write(SharedPtr<VideoFrame>& frame, VADisplay &m_vaDisplay, const char *name)
+    {
+        VASurfaceID surface = (VASurfaceID)frame->surface;
+        VAImage image;
+	m_fp = fopen(name, "wb");
 
+        uint8_t* buf = mapSurfaceToImage(m_vaDisplay, surface, image);
+	printf("w %d, h %d, p0 %d, p1 %d\n", image.width, image.height, image.pitches[0], image.pitches[1]);
+        if (buf != NULL) {
+            for (int i = 0; i < image.height; i++) {
+                fwrite(buf + i * image.pitches[0], 1, image.width, m_fp);
+            }
+            buf += image.offsets[1];
+            for (int i = 0; i < image.height / 2; i++) {
+                fwrite(buf + i * image.pitches[1], 1, image.width, m_fp);
+            }
+            unmapImage(m_vaDisplay, image);
+	    fclose(m_fp);
+            return true;
+        }
+        else {
+	    fclose(m_fp);
+            return false;
+        }
+    }
 
 SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, const SharedPtr<VADisplay>& display)
 {
@@ -33,6 +59,7 @@ SharedPtr<FrameAllocator> createAllocator(const SharedPtr<VppOutput>& output, co
 		allocator.reset();
 		ERROR("get Format failed");
 	}
+	printf("fourcc %x, w %d, h %d\n", fourcc, width, height);
 	return allocator;
 }
 
@@ -168,7 +195,7 @@ int main(int argc,char** argv){
 	display.reset(new VADisplay(vaDisplay));
     
 	char vppoutput[] = "trans.yuv";
-	SharedPtr<VppOutput> output1 = VppOutput::create(vppoutput,VA_FOURCC_NV12,videoWidth,videoHeight);
+	SharedPtr<VppOutput> output1 = VppOutput::create(vppoutput,VA_FOURCC_RGBX,videoWidth,videoHeight);
 	if(!output1){
 		printf("create output1 failed!\n");
 		return -1;
@@ -186,8 +213,12 @@ int main(int argc,char** argv){
 			break;
 		}
 
+		frame_write(frame, vaDisplay, "frame.rgbx");
+	        printf("\n\n\n");
+		frame_write(dest, vaDisplay, "frame.yuv");
+	        printf("\n\n\n");
 		if(dest){
-			status = encoder->encode(dest);
+			status = encoder->encode(frame);
 			assert(status == ENCODE_SUCCESS);
 		}
 		else{

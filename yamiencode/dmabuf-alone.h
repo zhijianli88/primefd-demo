@@ -36,5 +36,7 @@ struct drm_i915_gem_vgtbuffer {
         __u32 handle;
 };
 
+extern struct drm_i915_gem_vgtbuffer vgtbuffer;
+
 int test_dmabuf(int fd1, int vmid, struct drm_i915_gem_vgtbuffer *);
 #endif

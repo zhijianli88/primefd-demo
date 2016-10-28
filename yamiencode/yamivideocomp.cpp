@@ -1,5 +1,6 @@
 #include "yamivideocomp.h"
 #include <va/va_drmcommon.h>
+#include "dmabuf-alone.h"
 
 using namespace YamiMediaCodec;
 #define BPP 32
@@ -8,11 +9,12 @@ int SurfaceCreate::bindToSurface(std::vector<VASurfaceID>& surfaces){
 	VASurfaceAttribExternalBuffers external;	
 	memset(&external, 0, sizeof(external));
 
-	external.pixel_format = VA_FOURCC_BGRX;
+	external.pixel_format = VA_FOURCC_RGBX;
 	external.width = m_width;
 	external.height = m_height;
 	external.data_size = m_width * m_height * BPP / 8;
 	external.num_planes = 1;
+	external.pitches[0] = vgtbuffer.stride; //can be obtained from vcreate FIXME
 	external.pitches[0] = m_width; //can be obtained from vcreate FIXME
 	external.buffers = (long unsigned int*)m_handle;
 	external.num_buffers = m_poolsize;
