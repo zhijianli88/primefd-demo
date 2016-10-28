@@ -97,6 +97,10 @@ int main(int argc,char** argv){
 		return -1;
 	}
 
+	//create AVC encoder
+	encoder = createVideoEncoder(YAMI_MIME_H264);
+	assert(encoder != NULL);
+
 	dmabuf[0] = test_dmabuf(fd, vmid, &vgtbuffer);
 	for (int i = 1; i < poolsize; i++) {
 		dmabuf[i] = dmabuf[0];
@@ -112,10 +116,6 @@ int main(int argc,char** argv){
 		fprintf(stderr,"fail to init output stream!\n");
 		return -1;
 	}
-
-	//create AVC encoder
-	encoder = createVideoEncoder(YAMI_MIME_H264);
-	assert(encoder != NULL);
 
 	NativeDisplay nativeDisplay;
 	nativeDisplay.type = NATIVE_DISPLAY_DRM;
